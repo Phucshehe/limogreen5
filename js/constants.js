@@ -1,0 +1,11 @@
+const SEV_ORDER = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'];
+const SEV_VN = { CRITICAL: 'Nghiêm trọng', HIGH: 'Cao', MEDIUM: 'Trung bình', LOW: 'Thấp', INFO: 'Thông tin' };
+const SEV_COLOR_HEX = { CRITICAL: '#ff3366', HIGH: '#ff6b35', MEDIUM: '#fbbf24', LOW: '#38bdf8', INFO: '#6b7280' };
+const SEV_DOCX_COLOR = { CRITICAL: 'B91C3C', HIGH: 'C2410C', MEDIUM: 'B45309', LOW: '0369A1', INFO: '4B5563' };
+const SEV_DOCX_BG = { CRITICAL: 'FEE2E2', HIGH: 'FFEDD5', MEDIUM: 'FEF3C7', LOW: 'E0F2FE', INFO: 'F3F4F6' };
+
+window.SEV_ORDER = SEV_ORDER;
+window.SEV_VN = SEV_VN;
+window.SEV_COLOR_HEX = SEV_COLOR_HEX;
+window.SEV_DOCX_COLOR = SEV_DOCX_COLOR;
+window.SEV_DOCX_BG = SEV_DOCX_BG;
