@@ -123,7 +123,7 @@ async function genPdf() {
   doc.text('MSSV: ' + plainText(proj.leaderMSSV), MARGIN, y);
   nextLine();
   doc.text('Lớp: ' + plainText(proj.leaderClass), MARGIN, y);
-  nextLine(8);
+  nextLine(10);
   putTitle('BÁO CÁO KIỂM THỬ BẢO MẬT', 18);
   doc.setFontSize(10);
   setFont(false);
