@@ -116,7 +116,14 @@ async function genPdf() {
     doc.text(lines, MARGIN, y);
     nextLine(lines.length * LINE_H + 2);
   }
-
+  doc.setFontSize(9);
+  setFont(true);
+  doc.text('Trưởng nhóm: ' + plainText(proj.leaderName), MARGIN, y);
+  nextLine();
+  doc.text('MSSV: ' + plainText(proj.leaderMSSV), MARGIN, y);
+  nextLine();
+  doc.text('Lớp: ' + plainText(proj.leaderClass), MARGIN, y);
+  nextLine(8);
   putTitle('BÁO CÁO KIỂM THỬ BẢO MẬT', 18);
   doc.setFontSize(10);
   setFont(false);
