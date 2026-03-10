@@ -149,6 +149,16 @@ function renderVulnList() {
             <label>Tham Chiếu (References)</label>
             <textarea oninput="updV(${v.id},'refs',this.value)" style="min-height:65px" placeholder="CVE-XXXX-XXXX, OWASP Top 10, CWE-XXX, https://...">${esc(v.refs)}</textarea>
           </div>
+          <div class="fg full">
+            <label>📷 Ảnh Minh Chứng (Evidence Images)</label>
+            <div class="img-section">
+              <button type="button" class="img-upload-btn" onclick="triggerImgUpload(${v.id})">＋ Thêm ảnh</button>
+              <input type="file" id="img-input-${v.id}" accept="image/*" multiple style="display:none" onchange="handleImgUpload(${v.id},this)">
+              <div class="img-grid" id="img-grid-${v.id}">
+                ${(v.images||[]).map((img,idx)=>`<div class="img-thumb"><img src="${img.data}" title="${esc(img.name||'')}"><button class="img-del" onclick="removeVulnImage(${v.id},${idx})">✕</button><span class="img-name">${esc(img.name||'')}</span></div>`).join('')}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -278,9 +288,10 @@ function init() {
     }
     if (state && state.project) applyProjectToDOM(state.project);
     if (state && Array.isArray(state.vulns)) {
-      vulns = state.vulns;
+      vulns = state.vulns.map(v => ({ images: [], ...v }));
       idcnt = state.idcnt != null ? state.idcnt : idcnt;
     }
+feat: thêm upload ảnh minh chứng cho lỗ hổng
     renderVulnList();
     if (userInfo.name) {
       document.getElementById('loginScreen').style.display = 'none';
@@ -290,13 +301,61 @@ function init() {
 
   window.vulns = vulns;
 }
+function triggerImgUpload(id) {
+  const inp = document.getElementById('img-input-' + id);
+  if (inp) inp.click();
+}
 
+function handleImgUpload(id, input) {
+  const v = vulns.find(x => x.id === id);
+  if (!v) return;
+  if (!v.images) v.images = [];
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  let loaded = 0;
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      v.images.push({ data: e.target.result, name: file.name });
+      loaded++;
+      if (loaded === files.length) {
+        refreshImgGrid(id);
+        persistState();
+        toast('Đã thêm ' + files.length + ' ảnh.', 'ok');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function refreshImgGrid(id) {
+  const v = vulns.find(x => x.id === id);
+  const grid = document.getElementById('img-grid-' + id);
+  if (!grid || !v) return;
+  grid.innerHTML = (v.images || []).map((img, idx) =>
+    `<div class="img-thumb"><img src="${img.data}" title="${esc(img.name||'')}"><button class="img-del" onclick="removeVulnImage(${id},${idx})">✕</button><span class="img-name">${esc(img.name||'')}</span></div>`
+  ).join('');
+}
+
+function removeVulnImage(id, idx) {
+  const v = vulns.find(x => x.id === id);
+  if (!v || !v.images) return;
+  v.images.splice(idx, 1);
+  refreshImgGrid(id);
+  persistState();
+}
 window.doLogout = doLogout;
 window.addVuln = addVuln;
 window.removeVuln = removeVuln;
 window.toggleVuln = toggleVuln;
 window.updV = updV;
 window.clearAll = clearAll;
+window.triggerImgUpload = triggerImgUpload;
+window.handleImgUpload = handleImgUpload;
+window.removeVulnImage = removeVulnImage;
+window.refreshImgGrid = refreshImgGrid;
 window.getProj = getProj;
 window.fmtDate = fmtDate;
 window.toast = toast;
