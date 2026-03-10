@@ -1,3 +1,20 @@
+function base64ToUint8Array(dataUrl) {
+  const base64 = dataUrl.split(',')[1];
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+function getImgSize(src) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => res({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => res({ w: 600, h: 400 });
+    img.src = src;
+  });
+}
+
 async function genDocx() {
   const vulns = window.vulns;
   const getProj = window.getProj;
@@ -16,7 +33,7 @@ async function genDocx() {
     const {
       Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
       HeadingLevel, AlignmentType, WidthType, BorderStyle, ShadingType,
-      PageBreak
+      PageBreak, ImageRun
     } = docxLib;
 
     const proj = getProj();
@@ -170,7 +187,8 @@ async function genDocx() {
     const detailsChildren = [
       new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { after: 300 }, children: [new TextRun({ text: '3. CHI TIẾT LỖ HỔNG', bold: true, size: 32, color: CLR_MAIN, font: FONT })] }),
     ];
-    vulns.forEach((v, i) => {
+    for (let i = 0; i < vulns.length; i++) {
+      const v = vulns[i];
       detailsChildren.push(
         h2p(`${i + 1}. ${v.name || 'Lỗ hổng ' + (i + 1)}`),
         ...sp(),
@@ -202,11 +220,40 @@ async function genDocx() {
         h3p('Tham Chiếu'),
         ...bodyP(v.refs || '—'),
         ...sp(),
+      );
+      // Add images
+      if (v.images && v.images.length > 0) {
+        detailsChildren.push(h3p('Ảnh Minh Chứng'));
+        for (const img of v.images) {
+          try {
+            const dims = await getImgSize(img.data);
+            const MAX_PX = 580;
+            const scale = Math.min(1, MAX_PX / dims.w);
+            const iw = Math.round(dims.w * scale);
+            const ih = Math.round(dims.h * scale);
+            detailsChildren.push(new Paragraph({
+              children: [new ImageRun({
+                data: base64ToUint8Array(img.data),
+                transformation: { width: iw, height: ih }
+              })],
+              spacing: { after: 100 }
+            }));
+            if (img.name) {
+              detailsChildren.push(new Paragraph({
+                children: [new TextRun({ text: img.name, size: 18, color: '6B7280', italics: true, font: FONT })],
+                spacing: { after: 160 }
+              }));
+            }
+          } catch(e) { console.warn('DOCX img error:', e); }
+        }
+        detailsChildren.push(...sp());
+      }
+      detailsChildren.push(
         new Paragraph({ children: [], border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' } } }),
         ...sp(2),
       );
       if (i < vulns.length - 1) detailsChildren.push(new Paragraph({ children: [new PageBreak()] }));
-    });
+    }
 
     const doc = new Document({
       styles: {
