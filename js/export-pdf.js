@@ -23,6 +23,15 @@ function arrayBufferToBase64(ab) {
   return btoa(binary);
 }
 
+function getImgDimsPdf(src) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => res({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => res({ w: 400, h: 300 });
+    img.src = src;
+  });
+}
+
 async function genPdf() {
   const vulns = window.vulns;
   const getProj = window.getProj;
@@ -146,7 +155,8 @@ async function genPdf() {
   });
   nextLine(5);
 
-  vulns.forEach((v, i) => {
+  for (let i = 0; i < vulns.length; i++) {
+    const v = vulns[i];
     putHeading((i + 1) + '. ' + plainText(v.name));
     putLine('Mức độ', SEV_VN[v.severity] || v.severity);
     putLine('Vị trí', v.location);
@@ -156,8 +166,37 @@ async function genPdf() {
     putBlock(v.recommend);
     putHeading('Tham chiếu');
     putBlock(v.refs);
+    // Add evidence images
+    if (v.images && v.images.length > 0) {
+      putHeading('Ảnh Minh Chứng');
+      for (let j = 0; j < v.images.length; j++) {
+        const img = v.images[j];
+        try {
+          const dims = await getImgDimsPdf(img.data);
+          const maxW = CONTENT_W; // mm
+          const pxPerMm = dims.w / maxW;
+          const hMm = Math.round(dims.h / pxPerMm);
+          const wMm = maxW;
+          const clampedH = Math.min(hMm, PAGE_H - MARGIN * 2 - 20);
+          const clampedW = Math.round(wMm * (clampedH / hMm));
+          if (y + clampedH + 5 > PAGE_H - MARGIN) { doc.addPage(); y = MARGIN; }
+          const fmt = img.data.split(';')[0].split('/')[1].toUpperCase();
+          const safeF = ['JPEG','PNG','GIF','WEBP'].includes(fmt) ? fmt : 'JPEG';
+          doc.addImage(img.data, safeF, MARGIN, y, clampedW, clampedH);
+          y += clampedH + 3;
+          if (img.name) {
+            setFont(false);
+            doc.setFontSize(8);
+            doc.setTextColor(120, 120, 120);
+            doc.text(plainText(img.name), MARGIN, y);
+            doc.setTextColor(0, 0, 0);
+            nextLine(5);
+          }
+        } catch(e) { console.warn('PDF img error:', e); }
+      }
+    }
     nextLine(5);
-  });
+  }
 
   const filename = `Bao_cao_bao_mat_${safeFilename(proj.name, proj.date)}.pdf`;
   doc.save(filename);
