@@ -159,7 +159,7 @@ function renderVulnList() {
 
 function addVuln() {
   idcnt++;
-  vulns.push({ id: idcnt, name: '', location: '', exploit: '', severity: 'HIGH', recommend: '', refs: '', open: true });
+  vulns.push({ id: idcnt, name: '', location: '', exploit: '', severity: 'HIGH', recommend: '', refs: '', images: [], open: true });
   renderVulnList();
   setTimeout(() => {
     const el = document.getElementById('vc-' + idcnt);
