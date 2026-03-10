@@ -291,7 +291,6 @@ function init() {
       vulns = state.vulns.map(v => ({ images: [], ...v }));
       idcnt = state.idcnt != null ? state.idcnt : idcnt;
     }
-feat: thêm upload ảnh minh chứng cho lỗ hổng
     renderVulnList();
     if (userInfo.name) {
       document.getElementById('loginScreen').style.display = 'none';
